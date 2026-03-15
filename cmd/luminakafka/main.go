@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	nethttp "net/http"
+	"os"
 	"strings"
 
 	apihttp "github.com/luminakafka/lumnia/internal/api/http"
@@ -12,7 +13,7 @@ import (
 const version = "0.1.0"
 
 func main() {
-	brokers := splitAndTrim("localhost:9092")
+	brokers := splitAndTrim(os.Getenv("KAFKA_BROKERS"))
 	if len(brokers) == 0 {
 		log.Fatal("KAFKA_BROKERS is required")
 	}
