@@ -3,7 +3,8 @@ import {
   ConsumerGroup,
   ConsumerGroupDetail,
   HealthResponse,
-  Topic
+  Topic,
+  TopicMessagesResponse
 } from "@/lib/types";
 
 type Envelope<T> = {
@@ -56,6 +57,34 @@ export async function getTopics() {
 export async function getTopic(name: string) {
   const response = await fetchFromAPI<Envelope<Topic>>(
     `/api/topics/${encodeURIComponent(name)}`
+  );
+  return response.data;
+}
+
+export async function getTopicMessages(
+  name: string,
+  query: {
+    partition: number;
+    position?: "earliest" | "latest";
+    offset?: number;
+    limit?: number;
+  }
+) {
+  const searchParams = new URLSearchParams({
+    partition: String(query.partition)
+  });
+
+  if (typeof query.limit === "number") {
+    searchParams.set("limit", String(query.limit));
+  }
+  if (typeof query.offset === "number") {
+    searchParams.set("offset", String(query.offset));
+  } else if (query.position) {
+    searchParams.set("position", query.position);
+  }
+
+  const response = await fetchFromAPI<Envelope<TopicMessagesResponse>>(
+    `/api/topics/${encodeURIComponent(name)}/messages?${searchParams.toString()}`
   );
   return response.data;
 }

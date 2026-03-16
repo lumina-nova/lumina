@@ -30,14 +30,16 @@ export default async function ConsumerGroupsPage() {
 
   const groups = result.groups;
   const stable = groups.filter((group) => group.state.toLowerCase() === "stable");
+  const totalLag = groups.reduce((sum, group) => sum + group.lag, 0);
+  const totalMembers = groups.reduce((sum, group) => sum + group.members, 0);
 
   return (
     <PageFrame
       eyebrow="Operational View"
       title="Consumer Groups"
-      description="Group-level metadata from Kafka. Open a group to inspect coordinator, member assignments, and lag per partition."
+      description="Group-level state, membership, and aggregate lag from Kafka. Open a group to inspect coordinator, member assignments, and lag per partition."
     >
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <StatCard
           label="Groups"
           value={String(groups.length)}
@@ -49,9 +51,14 @@ export default async function ConsumerGroupsPage() {
           hint="Groups currently reporting Stable state."
         />
         <StatCard
-          label="Other States"
-          value={String(groups.length - stable.length)}
-          hint="Groups that are not currently Stable."
+          label="Members"
+          value={String(totalMembers)}
+          hint="Total active members across returned groups."
+        />
+        <StatCard
+          label="Lag"
+          value={String(totalLag)}
+          hint="Aggregate lag across all returned groups."
         />
       </div>
 
@@ -67,22 +74,22 @@ export default async function ConsumerGroupsPage() {
               <thead>
                 <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-[0.24em] text-slate-500">
                   <th className="px-5 py-4 font-semibold">Group</th>
-                  <th className="px-5 py-4 font-semibold">Protocol</th>
                   <th className="px-5 py-4 font-semibold">State</th>
+                  <th className="px-5 py-4 font-semibold">Members</th>
+                  <th className="px-5 py-4 font-semibold">Lag</th>
                 </tr>
               </thead>
               <tbody>
                 {groups.map((group) => (
-                  <tr key={group.group} className="border-t border-white/5 text-sm text-slate-200">
+                  <tr key={group.groupId} className="border-t border-white/5 text-sm text-slate-200">
                     <td className="px-5 py-4">
                       <Link
-                        href={`/consumer-groups/${encodeURIComponent(group.group)}`}
+                        href={`/consumer-groups/${encodeURIComponent(group.groupId)}`}
                         className="font-mono text-emerald-300 transition hover:text-emerald-200"
                       >
-                        {group.group}
+                        {group.groupId}
                       </Link>
                     </td>
-                    <td className="px-5 py-4">{group.protocol_type || "Unavailable"}</td>
                     <td className="px-5 py-4">
                       <span
                         className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
@@ -94,6 +101,8 @@ export default async function ConsumerGroupsPage() {
                         {group.state}
                       </span>
                     </td>
+                    <td className="px-5 py-4 font-mono">{group.members}</td>
+                    <td className="px-5 py-4 font-mono">{group.lag}</td>
                   </tr>
                 ))}
               </tbody>

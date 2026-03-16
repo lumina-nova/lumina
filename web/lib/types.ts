@@ -25,10 +25,48 @@ export type Topic = {
   partitions: Partition[];
 };
 
+export type MessagePayload = {
+  encoding: string;
+  size: number;
+  text?: string;
+  base64?: string;
+  truncated?: boolean;
+};
+
+export type MessageHeader = {
+  key: string;
+  value: MessagePayload;
+};
+
+export type TopicMessageRecord = {
+  offset: number;
+  timestamp: string;
+  partition: number;
+  leaderEpoch: number;
+  key: MessagePayload;
+  value: MessagePayload;
+  headers: MessageHeader[];
+};
+
+export type TopicMessagesResponse = {
+  topic: string;
+  partition: number;
+  request: {
+    mode: "earliest" | "latest" | "offset";
+    offset?: number;
+    limit: number;
+  };
+  resolvedStartOffset: number;
+  nextOffset: number;
+  highWatermark: number;
+  records: TopicMessageRecord[];
+};
+
 export type ConsumerGroup = {
-  group: string;
-  protocol_type: string;
+  groupId: string;
   state: string;
+  members: number;
+  lag: number;
 };
 
 export type ConsumerGroupAssignment = {

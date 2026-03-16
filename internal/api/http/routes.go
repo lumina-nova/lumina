@@ -8,6 +8,7 @@ func NewRouter(handler *Handler) nethttp.Handler {
 	mux.HandleFunc("/api/brokers", handler.GetBrokers)
 	mux.HandleFunc("/api/topics", handler.GetTopics)
 	mux.HandleFunc("/api/topics/{name}", handler.GetTopic)
+	mux.HandleFunc("/api/topics/{name}/messages", handler.GetTopicMessages)
 
 	mux.HandleFunc("/api/consumer-groups", handler.GetConsumerGroups)
 	mux.HandleFunc("/api/consumer-groups/{name}", handler.GetConsumerGroup)

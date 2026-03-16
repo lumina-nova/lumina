@@ -3,7 +3,9 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	nethttp "net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,6 +17,7 @@ type KafkaService interface {
 	ListBrokers(ctx context.Context) ([]kafka.Broker, error)
 	ListTopics(ctx context.Context) ([]kafka.Topic, error)
 	GetTopic(ctx context.Context, name string) (*kafka.Topic, error)
+	BrowseTopicMessages(ctx context.Context, req kafka.BrowseMessagesRequest) (*kafka.BrowseMessagesResponse, error)
 	GetConsumerGroups(ctx context.Context) (kafka.ConsumerGroupResponse, error)
 	GetConsumerGroup(ctx context.Context, name string) (*kafka.ConsumerGroupDetail, error)
 }
@@ -51,6 +54,10 @@ type topicsResponse struct {
 
 type topicResponse struct {
 	Data *kafka.Topic `json:"data"`
+}
+
+type topicMessagesResponse struct {
+	Data *kafka.BrowseMessagesResponse `json:"data"`
 }
 
 type errorResponse struct {
@@ -168,6 +175,66 @@ func (h *Handler) GetTopic(w nethttp.ResponseWriter, r *nethttp.Request) {
 	})
 }
 
+func (h *Handler) GetTopicMessages(w nethttp.ResponseWriter, r *nethttp.Request) {
+	topicName := strings.TrimSpace(r.PathValue("name"))
+	if topicName == "" {
+		writeJSON(w, nethttp.StatusBadRequest, errorResponse{
+			Error: apiError{
+				Code:    "INVALID_TOPIC_NAME",
+				Message: "Topic name is required",
+			},
+		})
+		return
+	}
+
+	req, err := parseBrowseMessagesRequest(topicName, r)
+	if err != nil {
+		writeJSON(w, nethttp.StatusBadRequest, errorResponse{
+			Error: apiError{
+				Code:    "INVALID_MESSAGE_QUERY",
+				Message: err.Error(),
+			},
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	defer cancel()
+
+	response, err := h.kafka.BrowseTopicMessages(ctx, req)
+	if err != nil {
+		statusCode := nethttp.StatusServiceUnavailable
+		errorCode := "KAFKA_MESSAGES_FETCH_FAILED"
+		message := "Failed to fetch topic messages"
+
+		lower := strings.ToLower(err.Error())
+		switch {
+		case strings.Contains(lower, "topic not found"):
+			statusCode = nethttp.StatusNotFound
+			errorCode = "TOPIC_NOT_FOUND"
+			message = "Topic not found"
+		case strings.Contains(lower, "partition") && strings.Contains(lower, "not found"):
+			statusCode = nethttp.StatusBadRequest
+			errorCode = "INVALID_PARTITION"
+			message = "Partition does not exist for topic"
+		case strings.Contains(lower, "out of range"), strings.Contains(lower, "unsupported browse mode"):
+			statusCode = nethttp.StatusBadRequest
+			errorCode = "INVALID_MESSAGE_QUERY"
+			message = "Invalid topic message query"
+		}
+
+		writeJSON(w, statusCode, errorResponse{
+			Error: apiError{
+				Code:    errorCode,
+				Message: message,
+				Details: err.Error(),
+			},
+		})
+		return
+	}
+
+	writeJSON(w, nethttp.StatusOK, topicMessagesResponse{Data: response})
+}
 func (h *Handler) GetConsumerGroups(w nethttp.ResponseWriter, r *nethttp.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -225,4 +292,65 @@ func writeJSON(w nethttp.ResponseWriter, statusCode int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func parseBrowseMessagesRequest(topicName string, r *nethttp.Request) (kafka.BrowseMessagesRequest, error) {
+	query := r.URL.Query()
+
+	partitionValue := strings.TrimSpace(query.Get("partition"))
+	if partitionValue == "" {
+		return kafka.BrowseMessagesRequest{}, fmt.Errorf("partition is required")
+	}
+
+	partition, err := strconv.ParseInt(partitionValue, 10, 32)
+	if err != nil || partition < 0 {
+		return kafka.BrowseMessagesRequest{}, fmt.Errorf("partition must be a non-negative integer")
+	}
+
+	limit := kafka.NormalizeBrowseLimit(parseIntDefault(query.Get("limit"), 0))
+
+	position := strings.TrimSpace(query.Get("position"))
+	offsetValue := strings.TrimSpace(query.Get("offset"))
+
+	if (position == "" && offsetValue == "") || (position != "" && offsetValue != "") {
+		return kafka.BrowseMessagesRequest{}, fmt.Errorf("exactly one of position or offset must be provided")
+	}
+
+	req := kafka.BrowseMessagesRequest{
+		Topic:     topicName,
+		Partition: int32(partition),
+		Limit:     limit,
+	}
+
+	if offsetValue != "" {
+		offset, err := strconv.ParseInt(offsetValue, 10, 64)
+		if err != nil || offset < 0 {
+			return kafka.BrowseMessagesRequest{}, fmt.Errorf("offset must be a non-negative integer")
+		}
+		req.Mode = kafka.MessageBrowseModeOffset
+		req.Offset = offset
+		return req, nil
+	}
+
+	switch kafka.MessageBrowseMode(position) {
+	case kafka.MessageBrowseModeEarliest, kafka.MessageBrowseModeLatest:
+		req.Mode = kafka.MessageBrowseMode(position)
+		return req, nil
+	default:
+		return kafka.BrowseMessagesRequest{}, fmt.Errorf("position must be earliest or latest")
+	}
+}
+
+func parseIntDefault(value string, fallback int) int {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+
+	return parsed
 }
