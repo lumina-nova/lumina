@@ -15,7 +15,8 @@ type KafkaService interface {
 	ListBrokers(ctx context.Context) ([]kafka.Broker, error)
 	ListTopics(ctx context.Context) ([]kafka.Topic, error)
 	GetTopic(ctx context.Context, name string) (*kafka.Topic, error)
-	GetConsumerGroup(ctx context.Context) (kafka.ConsumerGroupResponse, error)
+	GetConsumerGroups(ctx context.Context) (kafka.ConsumerGroupResponse, error)
+	GetConsumerGroup(ctx context.Context, name string) (*kafka.ConsumerGroupDetail, error)
 }
 
 type Handler struct {
@@ -125,7 +126,7 @@ func (h *Handler) GetTopics(w nethttp.ResponseWriter, r *nethttp.Request) {
 	})
 }
 
-func (h *Handler) getTopic(w nethttp.ResponseWriter, r *nethttp.Request) {
+func (h *Handler) GetTopic(w nethttp.ResponseWriter, r *nethttp.Request) {
 	topicName := strings.TrimSpace(r.PathValue("name"))
 	if topicName == "" {
 		writeJSON(w, nethttp.StatusBadRequest, errorResponse{
@@ -167,17 +168,57 @@ func (h *Handler) getTopic(w nethttp.ResponseWriter, r *nethttp.Request) {
 	})
 }
 
-func (h *Handler) getConsumerGroups(w nethttp.ResponseWriter, r *nethttp.Request) {
+func (h *Handler) GetConsumerGroups(w nethttp.ResponseWriter, r *nethttp.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	consumerGroupResponse, err := h.kafka.GetConsumerGroups(ctx)
+	if err != nil {
+		writeJSON(w, nethttp.StatusServiceUnavailable, errorResponse{
+			Error: apiError{
+				Code:    "KAFKA_CONSUMER_GROUPS_FAILED",
+				Message: "Failed to fetch consumer groups",
+				Details: err.Error(),
+			},
+		})
+		return
+	}
+	writeJSON(w, nethttp.StatusOK, consumerGroupResponse)
+
+}
+
+func (h *Handler) GetConsumerGroup(w nethttp.ResponseWriter, r *nethttp.Request) {
+	groupID := strings.TrimSpace(r.PathValue("name"))
+
+	if groupID == "" {
+		writeJSON(w, nethttp.StatusBadRequest, errorResponse{
+			Error: apiError{Code: "INVALID_GROUP_ID", Message: "Consumer group ID is required"},
+		})
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	ConsumerGroupResponse, err := h.kafka.GetConsumerGroup(ctx)
+	group, err := h.kafka.GetConsumerGroup(ctx, groupID)
 	if err != nil {
-		writeJSON(w, nethttp.StatusServiceUnavailable, errorResponse{})
+		status := nethttp.StatusServiceUnavailable
+		code := "KAFKA_CONSUMER_GROUP_FAILED"
+		msg := "Failed to fetch consumer group details"
+
+		if strings.Contains(strings.ToLower(err.Error()), "not found") {
+			status = nethttp.StatusNotFound
+			code = "CONSUMER_GROUP_NOT_FOUND"
+			msg = "Consumer group not found"
+		}
+
+		writeJSON(w, status, errorResponse{
+			Error: apiError{Code: code, Message: msg, Details: err.Error()},
+		})
 		return
 	}
-	writeJSON(w, nethttp.StatusOK, ConsumerGroupResponse)
+
+	writeJSON(w, nethttp.StatusOK, map[string]any{"data": group})
 
 }
 func writeJSON(w nethttp.ResponseWriter, statusCode int, payload any) {
