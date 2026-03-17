@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-
-	"github.com/twmb/franz-go/pkg/kmsg"
 )
 
 type partitionOffset struct {
@@ -14,38 +12,32 @@ type partitionOffset struct {
 }
 
 func (c *Client) fetchGroupOffsets(ctx context.Context, groupID string) (map[string][]partitionOffset, error) {
-	req := kmsg.NewPtrOffsetFetchRequest()
-	req.Group = groupID
-
-	resp, err := req.RequestWith(ctx, c.raw)
+	resp, err := c.admin.FetchOffsets(ctx, groupID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch offsets for group %q: %w", groupID, err)
 	}
 
-	if resp.ErrorCode != 0 {
-		return nil, kafkaError("failed to fetch consumer group offsets", resp.ErrorCode, nil)
-	}
-
 	offsets := make(map[string][]partitionOffset)
-	for _, topic := range resp.Topics {
-		rows := make([]partitionOffset, 0, len(topic.Partitions))
-		for _, partition := range topic.Partitions {
-			if partition.ErrorCode != 0 {
-				return nil, kafkaError(
-					fmt.Sprintf("failed to fetch offset for %s[%d]", topic.Topic, partition.Partition),
-					partition.ErrorCode,
-					nil,
+	for topicName, topicOffsets := range resp {
+		rows := make([]partitionOffset, 0, len(topicOffsets))
+		for partitionID, offsetResponse := range topicOffsets {
+			if offsetResponse.Err != nil {
+				return nil, fmt.Errorf(
+					"failed to fetch offset for %s[%d]: %w",
+					topicName,
+					partitionID,
+					offsetResponse.Err,
 				)
 			}
 
 			rows = append(rows, partitionOffset{
-				Partition: partition.Partition,
-				Offset:    partition.Offset,
+				Partition: partitionID,
+				Offset:    offsetResponse.Offset.At,
 			})
 		}
 
 		if len(rows) > 0 {
-			offsets[topic.Topic] = rows
+			offsets[topicName] = rows
 		}
 	}
 
@@ -57,44 +49,36 @@ func (c *Client) fetchLatestOffsets(ctx context.Context, committed map[string][]
 		return map[string]map[int32]int64{}, nil
 	}
 
-	req := kmsg.NewPtrListOffsetsRequest()
-	req.ReplicaID = -1
-
-	for topic, partitions := range committed {
-		reqTopic := kmsg.NewListOffsetsRequestTopic()
-		reqTopic.Topic = topic
-
-		for _, partition := range partitions {
-			reqPartition := kmsg.NewListOffsetsRequestTopicPartition()
-			reqPartition.Partition = partition.Partition
-			reqPartition.Timestamp = -1
-			reqTopic.Partitions = append(reqTopic.Partitions, reqPartition)
-		}
-
-		req.Topics = append(req.Topics, reqTopic)
+	topics := make([]string, 0, len(committed))
+	for topic := range committed {
+		topics = append(topics, topic)
 	}
 
-	resp, err := req.RequestWith(ctx, c.raw)
+	resp, err := c.admin.ListEndOffsets(ctx, topics...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch latest offsets: %w", err)
 	}
 
-	latest := make(map[string]map[int32]int64, len(resp.Topics))
-	for _, topic := range resp.Topics {
-		partitions := make(map[int32]int64, len(topic.Partitions))
-		for _, partition := range topic.Partitions {
-			if partition.ErrorCode != 0 {
-				return nil, kafkaError(
-					fmt.Sprintf("failed to fetch latest offset for %s[%d]", topic.Topic, partition.Partition),
-					partition.ErrorCode,
-					nil,
+	latest := make(map[string]map[int32]int64, len(resp))
+	for topicName, topicOffsets := range resp {
+		partitions := make(map[int32]int64, len(topicOffsets))
+		for partitionID, listedOffset := range topicOffsets {
+			if partitionID < 0 {
+				continue
+			}
+			if listedOffset.Err != nil {
+				return nil, fmt.Errorf(
+					"failed to fetch latest offset for %s[%d]: %w",
+					topicName,
+					partitionID,
+					listedOffset.Err,
 				)
 			}
 
-			partitions[partition.Partition] = partition.Offset
+			partitions[partitionID] = listedOffset.Offset
 		}
 
-		latest[topic.Topic] = partitions
+		latest[topicName] = partitions
 	}
 
 	return latest, nil

@@ -20,7 +20,7 @@ func main() {
 
 	kafkaClient, err := kafka.NewClient(brokers)
 	if err != nil {
-		log.Fatalf("init kafka client: %v", err)
+		log.Fatalf("init Kafka client: %v", err)
 	}
 	defer kafkaClient.Close()
 

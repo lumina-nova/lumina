@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 type Client struct {
 	raw     *kgo.Client
+	admin   *kadm.Client
 	brokers []string
 }
 
@@ -23,6 +25,7 @@ func NewClient(brokers []string) (*Client, error) {
 
 	return &Client{
 		raw:     raw,
+		admin:   kadm.NewClient(raw),
 		brokers: append([]string(nil), brokers...),
 	}, nil
 }

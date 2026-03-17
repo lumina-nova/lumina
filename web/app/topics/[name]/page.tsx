@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { EmptyState, ErrorState, PageFrame, StatCard } from "@/components/page-frame";
 import { getTopic, getTopicMessages } from "@/lib/api";
 import { MessagePayload } from "@/lib/types";
@@ -52,6 +54,7 @@ export default async function TopicDetailPage({
   const selectedPosition = parsePosition(query.position);
   const selectedLimit = parseLimit(query.limit);
   const selectedOffset = parseOffset(query.offset);
+  const baseTopicPath = `/topics/${encodeURIComponent(topic.name)}`;
 
   const browseResult =
     topic.partitions.length === 0
@@ -219,6 +222,32 @@ export default async function TopicDetailPage({
                   />
                 </div>
 
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href={buildBrowseHref(baseTopicPath, {
+                      partition: browseResult.messages.partition,
+                      position: "earliest",
+                      limit: browseResult.messages.request.limit
+                    })}
+                    className="rounded-2xl border border-white/10 bg-slate-950 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/20 hover:bg-slate-900"
+                  >
+                    Restart From Earliest
+                  </Link>
+                  <Link
+                    href={buildBrowseHref(baseTopicPath, {
+                      partition: browseResult.messages.partition,
+                      offset: browseResult.messages.nextOffset,
+                      limit: browseResult.messages.request.limit
+                    })}
+                    className="rounded-2xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-300/15"
+                  >
+                    Load Next {browseResult.messages.request.limit}
+                  </Link>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    Next page starts at offset {browseResult.messages.nextOffset}
+                  </p>
+                </div>
+
                 {browseResult.messages.records.length === 0 ? (
                   <EmptyState
                     title="No messages returned"
@@ -315,4 +344,27 @@ function payloadPreview(payload: MessagePayload) {
     return payload.base64 || "<binary>";
   }
   return payload.text ?? "<empty>";
+}
+
+function buildBrowseHref(
+  basePath: string,
+  query: {
+    partition: number;
+    position?: "earliest" | "latest";
+    offset?: number;
+    limit: number;
+  }
+) {
+  const searchParams = new URLSearchParams({
+    partition: String(query.partition),
+    limit: String(query.limit)
+  });
+
+  if (typeof query.offset === "number") {
+    searchParams.set("offset", String(query.offset));
+  } else if (query.position) {
+    searchParams.set("position", query.position);
+  }
+
+  return `${basePath}?${searchParams.toString()}`;
 }

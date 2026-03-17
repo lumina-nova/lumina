@@ -4,20 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/twmb/franz-go/pkg/kerr"
-	"github.com/twmb/franz-go/pkg/kmsg"
+	"github.com/twmb/franz-go/pkg/kadm"
 )
 
 func (c *Client) ListBrokers(ctx context.Context) ([]Broker, error) {
-	req := kmsg.NewPtrMetadataRequest()
-
-	resp, err := req.RequestWith(ctx, c.raw)
+	metadata, err := c.admin.BrokerMetadata(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list brokers: %w", err)
 	}
 
-	brokers := make([]Broker, 0, len(resp.Brokers))
-	for _, broker := range resp.Brokers {
+	brokers := make([]Broker, 0, len(metadata.Brokers))
+	for _, broker := range metadata.Brokers {
 		rack := ""
 		if broker.Rack != nil {
 			rack = *broker.Rack
@@ -35,52 +32,37 @@ func (c *Client) ListBrokers(ctx context.Context) ([]Broker, error) {
 }
 
 func (c *Client) ListTopics(ctx context.Context) ([]Topic, error) {
-	req := kmsg.NewPtrMetadataRequest()
-
-	resp, err := req.RequestWith(ctx, c.raw)
+	details, err := c.admin.ListTopics(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list topics: %w", err)
 	}
 
-	topics := make([]Topic, 0, len(resp.Topics))
-	for _, topic := range resp.Topics {
-		topics = append(topics, mapTopicMetadata(topic))
+	topics := make([]Topic, 0, len(details))
+	for _, topicDetail := range details.Sorted() {
+		topics = append(topics, mapTopicDetail(topicDetail))
 	}
 
 	return topics, nil
 }
 
 func (c *Client) GetTopic(ctx context.Context, name string) (*Topic, error) {
-	req := kmsg.NewPtrMetadataRequest()
-	req.Topics = []kmsg.MetadataRequestTopic{
-		{Topic: &name},
-	}
-
-	resp, err := req.RequestWith(ctx, c.raw)
+	details, err := c.admin.ListTopics(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list topic: %w", err)
 	}
 
-	if len(resp.Topics) == 0 {
+	topicDetail, ok := details[name]
+	if !ok || topicDetail.Err != nil {
 		return nil, fmt.Errorf("topic not found")
 	}
 
-	topic := mapTopicMetadata(resp.Topics[0])
-	if topic.Name == "" {
-		return nil, fmt.Errorf("topic metadata missing topic name")
-	}
-
+	topic := mapTopicDetail(topicDetail)
 	return &topic, nil
 }
 
-func mapTopicMetadata(topic kmsg.MetadataResponseTopic) Topic {
-	name := ""
-	if topic.Topic != nil {
-		name = *topic.Topic
-	}
-
+func mapTopicDetail(topic kadm.TopicDetail) Topic {
 	partitions := make([]Partition, 0, len(topic.Partitions))
-	for _, partition := range topic.Partitions {
+	for _, partition := range topic.Partitions.Sorted() {
 		partitions = append(partitions, Partition{
 			ID:       partition.Partition,
 			Leader:   partition.Leader,
@@ -90,41 +72,39 @@ func mapTopicMetadata(topic kmsg.MetadataResponseTopic) Topic {
 	}
 
 	return Topic{
-		Name:       name,
+		Name:       topic.Topic,
 		Partitions: partitions,
 	}
 }
 
 func (c *Client) lookupPartitionOffset(ctx context.Context, topic string, partition int32, timestamp int64) (int64, error) {
-	req := kmsg.NewPtrListOffsetsRequest()
-	req.ReplicaID = -1
+	var (
+		listed kadm.ListedOffsets
+		err    error
+	)
 
-	reqTopic := kmsg.NewListOffsetsRequestTopic()
-	reqTopic.Topic = topic
-
-	reqPartition := kmsg.NewListOffsetsRequestTopicPartition()
-	reqPartition.Partition = partition
-	reqPartition.Timestamp = timestamp
-	reqTopic.Partitions = append(reqTopic.Partitions, reqPartition)
-	req.Topics = append(req.Topics, reqTopic)
-
-	resp, err := req.RequestWith(ctx, c.raw)
+	switch timestamp {
+	case -2:
+		listed, err = c.admin.ListStartOffsets(ctx, topic)
+	case -1:
+		listed, err = c.admin.ListEndOffsets(ctx, topic)
+	default:
+		if timestamp < 0 {
+			return 0, fmt.Errorf("unsupported offset timestamp %d", timestamp)
+		}
+		listed, err = c.admin.ListOffsetsAfterMilli(ctx, timestamp, topic)
+	}
 	if err != nil {
 		return 0, fmt.Errorf("failed to lookup offsets for %s[%d]: %w", topic, partition, err)
 	}
 
-	if len(resp.Topics) == 0 || len(resp.Topics[0].Partitions) == 0 {
+	offset, ok := listed.Lookup(topic, partition)
+	if !ok {
 		return 0, fmt.Errorf("offset metadata missing for %s[%d]", topic, partition)
 	}
-
-	partitionResp := resp.Topics[0].Partitions[0]
-	if partitionResp.ErrorCode != 0 {
-		err := kerr.ErrorForCode(partitionResp.ErrorCode)
-		if err == nil {
-			return 0, fmt.Errorf("failed to lookup offsets for %s[%d]: kafka error code %d", topic, partition, partitionResp.ErrorCode)
-		}
-		return 0, fmt.Errorf("failed to lookup offsets for %s[%d]: %w", topic, partition, err)
+	if offset.Err != nil {
+		return 0, fmt.Errorf("failed to lookup offsets for %s[%d]: %w", topic, partition, offset.Err)
 	}
 
-	return partitionResp.Offset, nil
+	return offset.Offset, nil
 }
