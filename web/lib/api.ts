@@ -67,6 +67,7 @@ export async function getTopicMessages(
     partition: number;
     position?: "earliest" | "latest";
     offset?: number;
+    timestamp?: number;
     limit?: number;
   }
 ) {
@@ -79,6 +80,8 @@ export async function getTopicMessages(
   }
   if (typeof query.offset === "number") {
     searchParams.set("offset", String(query.offset));
+  } else if (typeof query.timestamp === "number") {
+    searchParams.set("timestamp", String(query.timestamp));
   } else if (query.position) {
     searchParams.set("position", query.position);
   }

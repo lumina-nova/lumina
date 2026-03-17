@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { EmptyState, ErrorState, PageFrame, StatCard } from "@/components/page-frame";
+import { TopicBrowseForm } from "@/components/topic-browse-form";
 import { getTopic, getTopicMessages } from "@/lib/api";
 import { MessagePayload } from "@/lib/types";
 
@@ -14,6 +15,7 @@ type TopicDetailPageProps = {
     partition?: string;
     position?: string;
     offset?: string;
+    timestamp?: string;
     limit?: string;
   }>;
 };
@@ -54,6 +56,7 @@ export default async function TopicDetailPage({
   const selectedPosition = parsePosition(query.position);
   const selectedLimit = parseLimit(query.limit);
   const selectedOffset = parseOffset(query.offset);
+  const selectedTimestamp = parseTimestamp(query.timestamp);
   const baseTopicPath = `/topics/${encodeURIComponent(topic.name)}`;
 
   const browseResult =
@@ -61,8 +64,10 @@ export default async function TopicDetailPage({
       ? { messages: null, error: null as string | null }
       : await getTopicMessages(topic.name, {
           partition: selectedPartition,
-          position: selectedOffset === null ? selectedPosition : undefined,
+          position:
+            selectedOffset === null && selectedTimestamp === null ? selectedPosition : undefined,
           offset: selectedOffset ?? undefined,
+          timestamp: selectedTimestamp ?? undefined,
           limit: selectedLimit
         })
           .then((messages) => ({ messages, error: null as string | null }))
@@ -128,69 +133,24 @@ export default async function TopicDetailPage({
           </div>
 
           <div className="rounded-[28px] border border-white/10 bg-slate-950/45 p-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white">Browse Messages</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Read a bounded slice of records for one partition without joining a consumer group.
-                </p>
-              </div>
-              <form className="grid gap-3 md:grid-cols-4" method="get">
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Partition
-                  <select
-                    name="partition"
-                    defaultValue={String(selectedPartition)}
-                    className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100"
-                  >
-                    {topic.partitions.map((partition) => (
-                      <option key={partition.id} value={partition.id}>
-                        {partition.id}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Position
-                  <select
-                    name="position"
-                    defaultValue={selectedOffset === null ? selectedPosition : "offset"}
-                    className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100"
-                  >
-                    <option value="latest">Latest</option>
-                    <option value="earliest">Earliest</option>
-                    <option value="offset">Offset</option>
-                  </select>
-                </label>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Offset
-                  <input
-                    name="offset"
-                    type="number"
-                    min="0"
-                    defaultValue={selectedOffset ?? ""}
-                    placeholder="Optional"
-                    className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
-                  />
-                </label>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Limit
-                  <input
-                    name="limit"
-                    type="number"
-                    min="1"
-                    max="100"
-                    defaultValue={String(selectedLimit)}
-                    className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100"
-                  />
-                </label>
-                <button
-                  type="submit"
-                  className="rounded-2xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-300/15 md:col-span-4"
-                >
-                  Fetch Records
-                </button>
-              </form>
+            <div>
+              <h3 className="text-lg font-semibold text-white">Browse Messages</h3>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+                Read a bounded slice of records for one partition without joining a consumer
+                group. Use latest for recent activity, offset for exact navigation, and timestamp
+                to jump to the first record at or after a chosen moment.
+              </p>
+            </div>
+            <div className="mt-5 rounded-[24px] border border-white/10 bg-slate-950/55 p-4">
+              <TopicBrowseForm
+                actionPath={baseTopicPath}
+                partitions={topic.partitions.map((partition) => partition.id)}
+                selectedPartition={selectedPartition}
+                selectedPosition={selectedPosition}
+                selectedOffset={selectedOffset}
+                selectedTimestamp={selectedTimestamp}
+                selectedLimit={selectedLimit}
+              />
             </div>
 
             {browseResult.error ? (
@@ -220,6 +180,24 @@ export default async function TopicDetailPage({
                     value={String(browseResult.messages.highWatermark)}
                     hint="Latest durable offset seen during this fetch."
                   />
+                </div>
+
+                <div className="rounded-[24px] border border-white/10 bg-slate-950/55 px-4 py-3 text-sm text-slate-300">
+                  <span className="font-semibold text-white">Browse Mode:</span>{" "}
+                  <span className="capitalize">{browseResult.messages.request.mode}</span>
+                  {typeof browseResult.messages.request.offset === "number" ? (
+                    <span className="ml-4 text-slate-400">
+                      Requested offset <span className="font-mono text-slate-200">{browseResult.messages.request.offset}</span>
+                    </span>
+                  ) : null}
+                  {typeof browseResult.messages.request.timestamp === "number" ? (
+                    <span className="ml-4 text-slate-400">
+                      Requested time{" "}
+                      <span className="font-mono text-slate-200">
+                        {new Date(browseResult.messages.request.timestamp).toLocaleString()}
+                      </span>
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
@@ -278,12 +256,26 @@ export default async function TopicDetailPage({
                               </td>
                               <td className="px-5 py-4">{renderPayload(record.key)}</td>
                               <td className="px-5 py-4">{renderPayload(record.value)}</td>
-                              <td className="px-5 py-4 font-mono text-xs text-slate-300">
-                                {record.headers.length === 0
-                                  ? "None"
-                                  : record.headers
-                                      .map((header) => `${header.key}: ${payloadPreview(header.value)}`)
-                                      .join(" · ")}
+                              <td className="px-5 py-4">
+                                {record.headers.length === 0 ? (
+                                  <span className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                                    None
+                                  </span>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {record.headers.map((header) => (
+                                      <div
+                                        key={`${record.offset}-${header.key}`}
+                                        className="rounded-2xl border border-white/10 bg-slate-950/70 px-3 py-2"
+                                      >
+                                        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                                          {header.key}
+                                        </p>
+                                        <div className="mt-2">{renderPayload(header.value)}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           ))}
@@ -322,19 +314,55 @@ function parseOffset(value: string | undefined) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
+function parseTimestamp(value: string | undefined) {
+  if (!value) {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
 function parsePosition(value: string | undefined): "earliest" | "latest" {
   return value === "earliest" ? "earliest" : "latest";
 }
 
 function renderPayload(payload: MessagePayload) {
+  const preview = payloadPreview(payload);
+  const isBinary = payload.encoding === "base64";
+  const isEmpty = payload.size === 0;
+
   return (
-    <div className="space-y-1">
-      <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-        {payload.encoding} · {payload.size}b
-      </p>
-      <p className="max-w-[32rem] whitespace-pre-wrap break-all font-mono text-xs text-slate-100">
-        {payloadPreview(payload)}
-      </p>
+    <div className="max-w-[32rem] space-y-2">
+      <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">
+        <span>{payload.encoding}</span>
+        <span>{payload.size}b</span>
+        {isEmpty ? (
+          <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] text-slate-400">
+            Empty
+          </span>
+        ) : null}
+        {isBinary ? (
+          <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2 py-1 text-[10px] text-sky-100">
+            Binary
+          </span>
+        ) : null}
+        {payload.truncated ? (
+          <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-2 py-1 text-[10px] text-amber-100">
+            Truncated
+          </span>
+        ) : null}
+      </div>
+      <details className="group rounded-2xl border border-white/10 bg-slate-950/70">
+        <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 marker:content-none">
+          <span className="group-open:hidden">Show Payload</span>
+          <span className="hidden group-open:inline">Hide Payload</span>
+        </summary>
+        <div className="border-t border-white/10 px-3 py-3">
+          <p className="whitespace-pre-wrap break-all font-mono text-xs leading-6 text-slate-100">
+            {preview}
+          </p>
+        </div>
+      </details>
     </div>
   );
 }

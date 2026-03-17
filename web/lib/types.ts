@@ -52,8 +52,9 @@ export type TopicMessagesResponse = {
   topic: string;
   partition: number;
   request: {
-    mode: "earliest" | "latest" | "offset";
+    mode: "earliest" | "latest" | "offset" | "timestamp";
     offset?: number;
+    timestamp?: number;
     limit: number;
   };
   resolvedStartOffset: number;
