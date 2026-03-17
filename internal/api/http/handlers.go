@@ -311,9 +311,20 @@ func parseBrowseMessagesRequest(topicName string, r *nethttp.Request) (kafka.Bro
 
 	position := strings.TrimSpace(query.Get("position"))
 	offsetValue := strings.TrimSpace(query.Get("offset"))
+	timestampValue := strings.TrimSpace(query.Get("timestamp"))
 
-	if (position == "" && offsetValue == "") || (position != "" && offsetValue != "") {
-		return kafka.BrowseMessagesRequest{}, fmt.Errorf("exactly one of position or offset must be provided")
+	modeCount := 0
+	if position != "" {
+		modeCount++
+	}
+	if offsetValue != "" {
+		modeCount++
+	}
+	if timestampValue != "" {
+		modeCount++
+	}
+	if modeCount != 1 {
+		return kafka.BrowseMessagesRequest{}, fmt.Errorf("exactly one of position, offset, or timestamp must be provided")
 	}
 
 	req := kafka.BrowseMessagesRequest{
@@ -329,6 +340,16 @@ func parseBrowseMessagesRequest(topicName string, r *nethttp.Request) (kafka.Bro
 		}
 		req.Mode = kafka.MessageBrowseModeOffset
 		req.Offset = offset
+		return req, nil
+	}
+
+	if timestampValue != "" {
+		timestamp, err := strconv.ParseInt(timestampValue, 10, 64)
+		if err != nil || timestamp < 0 {
+			return kafka.BrowseMessagesRequest{}, fmt.Errorf("timestamp must be a non-negative integer representing milliseconds since epoch")
+		}
+		req.Mode = kafka.MessageBrowseModeTimestamp
+		req.Timestamp = timestamp
 		return req, nil
 	}
 

@@ -15,9 +15,10 @@ type Topic struct {
 type MessageBrowseMode string
 
 const (
-	MessageBrowseModeEarliest MessageBrowseMode = "earliest"
-	MessageBrowseModeLatest   MessageBrowseMode = "latest"
-	MessageBrowseModeOffset   MessageBrowseMode = "offset"
+	MessageBrowseModeEarliest  MessageBrowseMode = "earliest"
+	MessageBrowseModeLatest    MessageBrowseMode = "latest"
+	MessageBrowseModeOffset    MessageBrowseMode = "offset"
+	MessageBrowseModeTimestamp MessageBrowseMode = "timestamp"
 )
 
 type Partition struct {
@@ -77,13 +78,15 @@ type BrowseMessagesRequest struct {
 	Partition int32
 	Mode      MessageBrowseMode
 	Offset    int64
+	Timestamp int64
 	Limit     int
 }
 
 type BrowseMessagesRequestSummary struct {
-	Mode   MessageBrowseMode `json:"mode"`
-	Offset *int64            `json:"offset,omitempty"`
-	Limit  int               `json:"limit"`
+	Mode      MessageBrowseMode `json:"mode"`
+	Offset    *int64            `json:"offset,omitempty"`
+	Timestamp *int64            `json:"timestamp,omitempty"`
+	Limit     int               `json:"limit"`
 }
 
 type MessagePayload struct {
