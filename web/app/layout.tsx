@@ -34,7 +34,7 @@ async function RootLayoutInner({
     : "Kafka unavailable";
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <Script id="lumina-theme-init" strategy="beforeInteractive">
           {`try {
@@ -47,7 +47,7 @@ async function RootLayoutInner({
           `}
         </Script>
       </head>
-      <body className="antialiased">
+      <body className="antialiased" suppressHydrationWarning>
         <AppShell healthLabel={label}>{children}</AppShell>
       </body>
     </html>

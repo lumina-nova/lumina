@@ -128,20 +128,7 @@ const themeStyles: Record<ThemeId, CSSProperties> = {
 
 export function AppShell({ healthLabel, children }: AppShellProps) {
   const pathname = usePathname();
-  const [theme, setTheme] = useState<ThemeId>(() => {
-    if (typeof document !== "undefined") {
-      const current = document.documentElement.dataset.theme;
-      if (
-        current === "ember" ||
-        current === "glacier" ||
-        current === "aurora" ||
-        current === "daybreak"
-      ) {
-        return current;
-      }
-    }
-    return "aurora";
-  });
+  const [theme, setTheme] = useState<ThemeId>("aurora");
 
   function applyTheme(nextTheme: ThemeId) {
     document.documentElement.dataset.theme = nextTheme;
@@ -152,7 +139,25 @@ export function AppShell({ healthLabel, children }: AppShellProps) {
   }
 
   useEffect(() => {
-    applyTheme(theme);
+    const frameId = window.requestAnimationFrame(() => {
+      try {
+        const savedTheme = localStorage.getItem("lumina-theme");
+        if (
+          savedTheme === "aurora" ||
+          savedTheme === "daybreak" ||
+          savedTheme === "ember" ||
+          savedTheme === "glacier"
+        ) {
+          setTheme(savedTheme);
+          applyTheme(savedTheme);
+          return;
+        }
+      } catch {}
+
+      applyTheme(theme);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
   }, [theme]);
 
   return (
@@ -184,20 +189,20 @@ export function AppShell({ healthLabel, children }: AppShellProps) {
                 src={logo}
                 alt="LuminaKafka"
                 priority
-                className="h-auto w-[172px]"
+                className="h-auto w-[120px]"
               />
-              <div className="mt-4 space-y-2">
+              <div className="mt-3 space-y-1.5">
                 <p
                   className="text-[11px] font-semibold uppercase tracking-[0.24em]"
                   style={{ color: "var(--accent)" }}
                 >
-                  Kafka Operational Console
+                  Operational Console
                 </p>
-                <h1 className="text-3xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
-                  Inspect topics fast
+                <h1 className="text-xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
+                  Inspect Kafka fast
                 </h1>
-                <p className="max-w-xs text-sm leading-6" style={{ color: "var(--text-muted)" }}>
-                  A dense interface for brokers, topics, partitions, messages, and consumer groups.
+                <p className="max-w-[11rem] text-xs leading-5" style={{ color: "var(--text-muted)" }}>
+                  Topics, brokers, messages, and groups.
                 </p>
               </div>
             </div>
@@ -262,9 +267,9 @@ export function AppShell({ healthLabel, children }: AppShellProps) {
               </h2>
             </div>
 
-            <div className="flex flex-col gap-3 sm:items-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div
-                className="inline-flex items-center gap-3 self-start rounded-full border px-4 py-2 text-sm sm:self-auto"
+                className="inline-flex items-center gap-3 self-start rounded-full border px-4 py-2 text-sm"
                 style={{
                   borderColor: "var(--accent-border)",
                   background: "var(--accent-soft)",
@@ -280,43 +285,38 @@ export function AppShell({ healthLabel, children }: AppShellProps) {
                 />
                 {healthLabel}
               </div>
-              <div
-                className="rounded-[22px] border p-2"
-                style={{
-                  borderColor: "var(--surface-border)",
-                  background: "var(--surface-3)"
-                }}
-              >
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  <p
-                    className="px-2 text-[11px] font-semibold uppercase tracking-[0.24em]"
-                    style={{ color: "var(--text-muted)" }}
+              <label className="inline-flex items-center gap-2  sm:self-auto">
+                <span
+                  className="text-[11px] font-semibold uppercase tracking-[0.24em]"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Theme
+                </span>
+                <div className="relative min-w-[10rem]">
+                  <select
+                    aria-label="Select theme"
+                    value={theme}
+                    onChange={(event) => {
+                      const nextTheme = event.target.value as ThemeId;
+                      applyTheme(nextTheme);
+                      setTheme(nextTheme);
+                    }}
+                    className="w-full appearance-none rounded-full border px-3 py-2 pr-8 text-sm font-medium outline-none transition"
+                    style={{
+                      borderColor: "var(--surface-border)",
+                      background: "var(--surface-3)",
+                      color: "var(--text-primary)"
+                    }}
                   >
-                    Theme
-                  </p>
-                  {themes.map((option) => {
-                    const isActive = theme === option.id;
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => {
-                          applyTheme(option.id);
-                          setTheme(option.id);
-                        }}
-                        className="rounded-2xl border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition"
-                        style={{
-                          borderColor: isActive ? "var(--accent-border)" : "var(--surface-border)",
-                          background: isActive ? "var(--accent-soft)" : "var(--surface-1)",
-                          color: isActive ? "var(--accent-contrast)" : "var(--text-secondary)"
-                        }}
-                      >
+                    {themes.map((option) => (
+                      <option key={option.id} value={option.id}>
                         {option.label}
-                      </button>
-                    );
-                  })}
+                      </option>
+                    ))}
+                  </select>
+
                 </div>
-              </div>
+              </label>
             </div>
           </header>
 
