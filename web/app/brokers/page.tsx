@@ -61,11 +61,17 @@ export default async function BrokersPage() {
           copy="Kafka responded but did not return any broker metadata."
         />
       ) : (
-        <div className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/45">
+        <div
+          className="overflow-hidden rounded-[28px] border"
+          style={{ borderColor: "var(--surface-border)", background: "var(--surface-1)" }}
+        >
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
               <thead>
-                <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-[0.24em] text-slate-500">
+                <tr
+                  className="border-b text-left text-[11px] uppercase tracking-[0.24em]"
+                  style={{ borderColor: "var(--surface-border)", color: "var(--text-muted)" }}
+                >
                   <th className="px-5 py-4 font-semibold">ID</th>
                   <th className="px-5 py-4 font-semibold">Host</th>
                   <th className="px-5 py-4 font-semibold">Port</th>
@@ -74,7 +80,14 @@ export default async function BrokersPage() {
               </thead>
               <tbody>
                 {brokers.map((broker) => (
-                  <tr key={broker.id} className="border-t border-white/5 text-sm text-slate-200">
+                  <tr
+                    key={broker.id}
+                    className="border-t text-sm"
+                    style={{
+                      borderColor: "color-mix(in srgb, var(--surface-border) 50%, transparent)",
+                      color: "var(--text-secondary)"
+                    }}
+                  >
                     <td className="px-5 py-4 font-mono">{broker.id}</td>
                     <td className="px-5 py-4 font-mono">{broker.host}</td>
                     <td className="px-5 py-4 font-mono">{broker.port}</td>

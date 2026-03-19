@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { getHealth } from "@/lib/api";
@@ -34,6 +35,18 @@ async function RootLayoutInner({
 
   return (
     <html lang="en">
+      <head>
+        <Script id="lumina-theme-init" strategy="beforeInteractive">
+          {`try {
+            var savedTheme = localStorage.getItem("lumina-theme");
+            if (savedTheme) {
+              document.documentElement.dataset.theme = savedTheme;
+              document.body.dataset.theme = savedTheme;
+            }
+          } catch (error) {}
+          `}
+        </Script>
+      </head>
       <body className="antialiased">
         <AppShell healthLabel={label}>{children}</AppShell>
       </body>

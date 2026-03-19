@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import { EmptyState, ErrorState, PageFrame, StatCard } from "@/components/page-frame";
+import { TopicsTable } from "@/components/topics-table";
 import { getTopics } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -61,43 +60,7 @@ export default async function TopicsPage() {
           copy="Kafka responded but there are no topics visible to this connection."
         />
       ) : (
-        <div className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/45">
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse">
-              <thead>
-                <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-[0.24em] text-slate-500">
-                  <th className="px-5 py-4 font-semibold">Topic</th>
-                  <th className="px-5 py-4 font-semibold">Partitions</th>
-                  <th className="px-5 py-4 font-semibold">Leaders</th>
-                  <th className="px-5 py-4 font-semibold">ISR Slots</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topics.map((topic) => (
-                  <tr key={topic.name} className="border-t border-white/5 text-sm text-slate-200">
-                    <td className="px-5 py-4">
-                      <Link
-                        href={`/topics/${encodeURIComponent(topic.name)}`}
-                        className="font-mono text-emerald-300 transition hover:text-emerald-200"
-                      >
-                        {topic.name}
-                      </Link>
-                    </td>
-                    <td className="px-5 py-4 font-mono">{topic.partitions.length}</td>
-                    <td className="px-5 py-4 font-mono">
-                      {Array.from(
-                        new Set(topic.partitions.map((partition) => partition.leader))
-                      ).join(", ")}
-                    </td>
-                    <td className="px-5 py-4 font-mono">
-                      {topic.partitions.reduce((sum, partition) => sum + partition.isr.length, 0)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <TopicsTable topics={topics} />
       )}
     </PageFrame>
   );

@@ -66,10 +66,15 @@ export default async function ConsumerGroupDetailPage({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <div className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/45">
-            <div className="border-b border-white/10 px-5 py-4">
-              <h3 className="text-lg font-semibold text-white">Members</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
+          <div
+            className="overflow-hidden rounded-[28px] border"
+            style={{ borderColor: "var(--surface-border)", background: "var(--surface-1)" }}
+          >
+            <div className="border-b px-5 py-4" style={{ borderColor: "var(--surface-border)" }}>
+              <h3 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                Members
+              </h3>
+              <p className="mt-2 text-sm leading-6" style={{ color: "var(--text-muted)" }}>
                 Client identity, host, and topic-partition assignments.
               </p>
             </div>
@@ -84,7 +89,10 @@ export default async function ConsumerGroupDetailPage({
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse">
                   <thead>
-                    <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-[0.24em] text-slate-500">
+                    <tr
+                      className="border-b text-left text-[11px] uppercase tracking-[0.24em]"
+                      style={{ borderColor: "var(--surface-border)", color: "var(--text-muted)" }}
+                    >
                       <th className="px-5 py-4 font-semibold">Member ID</th>
                       <th className="px-5 py-4 font-semibold">Client</th>
                       <th className="px-5 py-4 font-semibold">Host</th>
@@ -93,7 +101,14 @@ export default async function ConsumerGroupDetailPage({
                   </thead>
                   <tbody>
                     {group.members.map((member) => (
-                      <tr key={member.memberId} className="border-t border-white/5 text-sm text-slate-200">
+                      <tr
+                        key={member.memberId}
+                        className="border-t text-sm"
+                        style={{
+                          borderColor: "color-mix(in srgb, var(--surface-border) 50%, transparent)",
+                          color: "var(--text-secondary)"
+                        }}
+                      >
                         <td className="px-5 py-4 font-mono">{member.memberId}</td>
                         <td className="px-5 py-4 font-mono">{member.clientId}</td>
                         <td className="px-5 py-4 font-mono">{member.host}</td>
@@ -115,10 +130,15 @@ export default async function ConsumerGroupDetailPage({
             )}
           </div>
 
-          <div className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/45">
-            <div className="border-b border-white/10 px-5 py-4">
-              <h3 className="text-lg font-semibold text-white">Lag by Partition</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
+          <div
+            className="overflow-hidden rounded-[28px] border"
+            style={{ borderColor: "var(--surface-border)", background: "var(--surface-1)" }}
+          >
+            <div className="border-b px-5 py-4" style={{ borderColor: "var(--surface-border)" }}>
+              <h3 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                Lag by Partition
+              </h3>
+              <p className="mt-2 text-sm leading-6" style={{ color: "var(--text-muted)" }}>
                 Committed offsets compared with log end offsets.
               </p>
             </div>
@@ -133,7 +153,10 @@ export default async function ConsumerGroupDetailPage({
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse">
                   <thead>
-                    <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-[0.24em] text-slate-500">
+                    <tr
+                      className="border-b text-left text-[11px] uppercase tracking-[0.24em]"
+                      style={{ borderColor: "var(--surface-border)", color: "var(--text-muted)" }}
+                    >
                       <th className="px-5 py-4 font-semibold">Topic</th>
                       <th className="px-5 py-4 font-semibold">Partition</th>
                       <th className="px-5 py-4 font-semibold">Current</th>
@@ -143,7 +166,14 @@ export default async function ConsumerGroupDetailPage({
                   </thead>
                   <tbody>
                     {group.lag.map((row) => (
-                      <tr key={`${row.topic}-${row.partition}`} className="border-t border-white/5 text-sm text-slate-200">
+                      <tr
+                        key={`${row.topic}-${row.partition}`}
+                        className="border-t text-sm"
+                        style={{
+                          borderColor: "color-mix(in srgb, var(--surface-border) 50%, transparent)",
+                          color: "var(--text-secondary)"
+                        }}
+                      >
                         <td className="px-5 py-4 font-mono">{row.topic}</td>
                         <td className="px-5 py-4 font-mono">{row.partition}</td>
                         <td className="px-5 py-4 font-mono">{row.currentOffset}</td>
@@ -158,40 +188,43 @@ export default async function ConsumerGroupDetailPage({
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/10 bg-slate-950/45 p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+        <div
+          className="rounded-[28px] border p-5"
+          style={{ borderColor: "var(--surface-border)", background: "var(--surface-1)" }}
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: "var(--text-muted)" }}>
             Summary
           </p>
           <dl className="mt-4 space-y-4">
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-muted)" }}>
                 Group ID
               </dt>
-              <dd className="mt-2 font-mono text-sm text-slate-100">{group.groupId}</dd>
+              <dd className="mt-2 font-mono text-sm" style={{ color: "var(--text-primary)" }}>{group.groupId}</dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-muted)" }}>
                 State
               </dt>
-              <dd className="mt-2 text-sm text-slate-100">{group.state}</dd>
+              <dd className="mt-2 text-sm" style={{ color: "var(--text-primary)" }}>{group.state}</dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-muted)" }}>
                 Coordinator
               </dt>
-              <dd className="mt-2 font-mono text-sm text-slate-100">{group.coordinator}</dd>
+              <dd className="mt-2 font-mono text-sm" style={{ color: "var(--text-primary)" }}>{group.coordinator}</dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-muted)" }}>
                 Members
               </dt>
-              <dd className="mt-2 font-mono text-sm text-slate-100">{group.members.length}</dd>
+              <dd className="mt-2 font-mono text-sm" style={{ color: "var(--text-primary)" }}>{group.members.length}</dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--text-muted)" }}>
                 Total Lag
               </dt>
-              <dd className="mt-2 font-mono text-sm text-slate-100">{totalLag}</dd>
+              <dd className="mt-2 font-mono text-sm" style={{ color: "var(--text-primary)" }}>{totalLag}</dd>
             </div>
           </dl>
         </div>
