@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	apihttp "github.com/luminakafka/lumnia/internal/api/http"
-	"github.com/luminakafka/lumnia/internal/kafka"
+	apihttp "github.com/luminakafka/lumina/internal/api/http"
+	"github.com/luminakafka/lumina/internal/kafka"
 )
 
 const version = "0.1.0"
@@ -17,7 +17,6 @@ func main() {
 	if len(brokers) == 0 {
 		log.Fatal("KAFKA_BROKERS is required")
 	}
-
 	kafkaClient, err := kafka.NewClient(brokers)
 	if err != nil {
 		log.Fatalf("init Kafka client: %v", err)

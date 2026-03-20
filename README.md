@@ -53,6 +53,60 @@ Frontend runs on `http://localhost:3000`.
 
 The frontend talks to the backend through `INTERNAL_API_BASE_URL`, which defaults to `http://127.0.0.1:9099`. You only need to override it if your backend is running somewhere else.
 
+## Single-Container Run
+
+The intended packaged distribution is one container running both:
+- the Go Kafka API
+- the Next.js frontend
+
+Build the image:
+
+```bash
+docker build -t luminakafka/lumina:0.1.0 .
+```
+
+Run it:
+
+```bash
+docker run -p 3000:3000 \
+  -e KAFKA_BROKERS=broker1:9092,broker2:9092 \
+  luminakafka/lumina:0.1.0
+```
+
+Then open `http://localhost:3000`.
+
+Runtime inputs:
+- `KAFKA_BROKERS` required
+- `PORT` optional, defaults to `3000`
+- `INTERNAL_API_BASE_URL` is already wired internally to `http://127.0.0.1:9099`
+
+## Docker Compose Run
+
+For local Docker-to-Docker testing, use the included compose file. It starts:
+- Kafka as `kafka:9092`
+- Lumina as a single container running both the Go API and Next.js frontend
+
+Start both services:
+
+```bash
+docker compose up --build
+```
+
+Then open `http://localhost:3000`.
+
+Notes:
+- Lumina connects to Kafka with `KAFKA_BROKERS=kafka:19092`
+- Kafka advertises two listeners:
+  - `kafka:19092` for other containers on the compose network
+  - `localhost:9092` for tools running on your host machine
+
+For the Python seed scripts from your terminal, use:
+
+```bash
+python3 scripts/kafka_load_test_data.py --brokers localhost:9092
+python3 scripts/kafka_seed_consumer_groups.py --brokers localhost:9092 --topics app-logs,orders,payments
+```
+
 ## API Surface
 
 Current backend endpoints:

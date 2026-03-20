@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luminakafka/lumnia/internal/kafka"
+	"github.com/luminakafka/lumina/internal/kafka"
 )
 
 type KafkaService interface {

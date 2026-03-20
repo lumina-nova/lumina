@@ -1,4 +1,4 @@
-module github.com/luminakafka/lumnia
+module github.com/luminakafka/lumina
 
 go 1.25.0
 
