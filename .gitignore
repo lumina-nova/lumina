@@ -7,6 +7,8 @@
 *.dll
 *.so
 *.dylib
+luminakafka
+.tmp-luminakafka
 
 # Test binary, built with `go test -c`
 *.test
@@ -23,10 +25,28 @@ profile.cov
 # Go workspace file
 go.work
 go.work.sum
+.gocache/
+.gomodcache/
 
 # env file
 .env
+.env.local
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+
+# Node / Next.js
+.pnpm-store/
+node_modules/
+web/node_modules/
+web/.next/
