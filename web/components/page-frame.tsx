@@ -1,32 +1,41 @@
-type StatCardProps = {
-  label: string;
-  value: string;
-  hint: string;
-};
+import {
+  EmptyStateProps,
+  ErrorStateProps,
+  PageFrameProps,
+  StatCardProps,
+} from "@/interfaces/timeFrame.interface";
 
 export function StatCard({ label, value, hint }: StatCardProps) {
   return (
     <div
-      className="rounded-[24px] border p-5"
+      className="rounded-3xl border p-5"
       style={{
         borderColor: "var(--surface-border)",
         background: "var(--surface-1)",
-        boxShadow: "var(--shadow-elevated)"
+        boxShadow: "var(--shadow-elevated)",
       }}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: "var(--text-muted)" }}>
+      <p
+        className="text-[11px] font-semibold uppercase tracking-[0.24em]"
+        style={{ color: "var(--text-muted)" }}
+      >
         {label}
       </p>
-      <p className="mt-3 text-3xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>{value}</p>
-      <p className="mt-2 text-sm leading-6" style={{ color: "var(--text-muted)" }}>{hint}</p>
+      <p
+        className="mt-3 text-3xl font-semibold tracking-tight"
+        style={{ color: "var(--text-primary)" }}
+      >
+        {value}
+      </p>
+      <p
+        className="mt-2 text-sm leading-6"
+        style={{ color: "var(--text-muted)" }}
+      >
+        {hint}
+      </p>
     </div>
   );
 }
-
-type EmptyStateProps = {
-  title: string;
-  copy: string;
-};
 
 export function EmptyState({ title, copy }: EmptyStateProps) {
   return (
@@ -34,19 +43,24 @@ export function EmptyState({ title, copy }: EmptyStateProps) {
       className="rounded-[28px] border border-dashed p-8"
       style={{
         borderColor: "var(--surface-border)",
-        background: "var(--surface-1)"
+        background: "var(--surface-1)",
       }}
     >
-      <h3 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>{title}</h3>
-      <p className="mt-3 text-sm leading-7" style={{ color: "var(--text-muted)" }}>{copy}</p>
+      <h3
+        className="text-lg font-semibold"
+        style={{ color: "var(--text-primary)" }}
+      >
+        {title}
+      </h3>
+      <p
+        className="mt-3 text-sm leading-7"
+        style={{ color: "var(--text-muted)" }}
+      >
+        {copy}
+      </p>
     </div>
   );
 }
-
-type ErrorStateProps = {
-  title: string;
-  copy: string;
-};
 
 export function ErrorState({ title, copy }: ErrorStateProps) {
   return (
@@ -57,18 +71,11 @@ export function ErrorState({ title, copy }: ErrorStateProps) {
   );
 }
 
-type PageFrameProps = {
-  eyebrow: string;
-  title: string;
-  description: string;
-  children: React.ReactNode;
-};
-
 export function PageFrame({
   eyebrow,
   title,
   description,
-  children
+  children,
 }: PageFrameProps) {
   return (
     <section className="space-y-6">
@@ -77,16 +84,25 @@ export function PageFrame({
         style={{
           borderColor: "var(--surface-border)",
           background: "var(--surface-1)",
-          boxShadow: "var(--shadow-elevated)"
+          boxShadow: "var(--shadow-elevated)",
         }}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: "var(--text-muted)" }}>
+        <p
+          className="text-[11px] font-semibold uppercase tracking-[0.24em]"
+          style={{ color: "var(--text-muted)" }}
+        >
           {eyebrow}
         </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
+        <h1
+          className="mt-3 text-4xl font-semibold tracking-tight"
+          style={{ color: "var(--text-primary)" }}
+        >
           {title}
         </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7" style={{ color: "var(--text-muted)" }}>
+        <p
+          className="mt-4 max-w-3xl text-sm leading-7"
+          style={{ color: "var(--text-muted)" }}
+        >
           {description}
         </p>
       </div>

@@ -1,7 +1,12 @@
 import Link from "next/link";
 
 import { LocalDateTime } from "@/components/local-date-time";
-import { EmptyState, ErrorState, PageFrame, StatCard } from "@/components/page-frame";
+import {
+  EmptyState,
+  ErrorState,
+  PageFrame,
+  StatCard,
+} from "@/components/page-frame";
 import { TopicBrowseForm } from "@/components/topic-browse-form";
 import { TopicMessagesTable } from "@/components/topic-messages-table";
 import { getTopic, getTopicMessages } from "@/lib/api";
@@ -9,10 +14,10 @@ import { getTopic, getTopicMessages } from "@/lib/api";
 export const dynamic = "force-dynamic";
 
 type TopicDetailPageProps = {
-  params: Promise<{
+  readonly params: Promise<{
     name: string;
   }>;
-  searchParams?: Promise<{
+  readonly searchParams?: Promise<{
     partition?: string;
     position?: string;
     offset?: string;
@@ -23,7 +28,7 @@ type TopicDetailPageProps = {
 
 export default async function TopicDetailPage({
   params,
-  searchParams
+  searchParams,
 }: TopicDetailPageProps) {
   const { name } = await params;
   const query = (await searchParams) ?? {};
@@ -32,7 +37,7 @@ export default async function TopicDetailPage({
     .then((topic) => ({ topic, error: null as string | null }))
     .catch((error: unknown) => ({
       topic: null,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     }));
 
   if (result.error || !result.topic) {
@@ -66,15 +71,17 @@ export default async function TopicDetailPage({
       : await getTopicMessages(topic.name, {
           partition: selectedPartition,
           position:
-            selectedOffset === null && selectedTimestamp === null ? selectedPosition : undefined,
+            selectedOffset === null && selectedTimestamp === null
+              ? selectedPosition
+              : undefined,
           offset: selectedOffset ?? undefined,
           timestamp: selectedTimestamp ?? undefined,
-          limit: selectedLimit
+          limit: selectedLimit,
         })
           .then((messages) => ({ messages, error: null as string | null }))
           .catch((error: unknown) => ({
             messages: null,
-            error: error instanceof Error ? error.message : "Unknown error"
+            error: error instanceof Error ? error.message : "Unknown error",
           }));
 
   return (
@@ -96,7 +103,9 @@ export default async function TopicDetailPage({
         />
         <StatCard
           label="Leaders"
-          value={String(new Set(topic.partitions.map((partition) => partition.leader)).size)}
+          value={String(
+            new Set(topic.partitions.map((partition) => partition.leader)).size,
+          )}
           hint="Distinct broker leaders for this topic."
         />
       </div>
@@ -110,14 +119,20 @@ export default async function TopicDetailPage({
         <div className="space-y-6">
           <div
             className="overflow-hidden rounded-[28px] border"
-            style={{ borderColor: "var(--surface-border)", background: "var(--surface-1)" }}
+            style={{
+              borderColor: "var(--surface-border)",
+              background: "var(--surface-1)",
+            }}
           >
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
                 <thead>
                   <tr
                     className="border-b text-left text-[11px] uppercase tracking-[0.24em]"
-                    style={{ borderColor: "var(--surface-border)", color: "var(--text-muted)" }}
+                    style={{
+                      borderColor: "var(--surface-border)",
+                      color: "var(--text-muted)",
+                    }}
                   >
                     <th className="px-5 py-4 font-semibold">Partition</th>
                     <th className="px-5 py-4 font-semibold">Leader</th>
@@ -131,14 +146,21 @@ export default async function TopicDetailPage({
                       key={partition.id}
                       className="border-t text-sm"
                       style={{
-                        borderColor: "color-mix(in srgb, var(--surface-border) 50%, transparent)",
-                        color: "var(--text-secondary)"
+                        borderColor:
+                          "color-mix(in srgb, var(--surface-border) 50%, transparent)",
+                        color: "var(--text-secondary)",
                       }}
                     >
                       <td className="px-5 py-4 font-mono">{partition.id}</td>
-                      <td className="px-5 py-4 font-mono">{partition.leader}</td>
-                      <td className="px-5 py-4 font-mono">{partition.replicas.join(", ")}</td>
-                      <td className="px-5 py-4 font-mono">{partition.isr.join(", ")}</td>
+                      <td className="px-5 py-4 font-mono">
+                        {partition.leader}
+                      </td>
+                      <td className="px-5 py-4 font-mono">
+                        {partition.replicas.join(", ")}
+                      </td>
+                      <td className="px-5 py-4 font-mono">
+                        {partition.isr.join(", ")}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -148,21 +170,34 @@ export default async function TopicDetailPage({
 
           <div
             className="rounded-[28px] border p-5"
-            style={{ borderColor: "var(--surface-border)", background: "var(--surface-1)" }}
+            style={{
+              borderColor: "var(--surface-border)",
+              background: "var(--surface-1)",
+            }}
           >
             <div>
-              <h3 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+              <h3
+                className="text-lg font-semibold"
+                style={{ color: "var(--text-primary)" }}
+              >
                 Browse Messages
               </h3>
-              <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: "var(--text-muted)" }}>
-                Read a bounded slice of records for one partition without joining a consumer
-                group. Use latest for recent activity, offset for exact navigation, and timestamp
-                to jump to the first record at or after a chosen moment.
+              <p
+                className="mt-2 max-w-3xl text-sm leading-6"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Read a bounded slice of records for one partition without
+                joining a consumer group. Use latest for recent activity, offset
+                for exact navigation, and timestamp to jump to the first record
+                at or after a chosen moment.
               </p>
             </div>
             <div
               className="mt-5 rounded-[24px] border p-4"
-              style={{ borderColor: "var(--surface-border)", background: "var(--surface-2)" }}
+              style={{
+                borderColor: "var(--surface-border)",
+                background: "var(--surface-2)",
+              }}
             >
               <TopicBrowseForm
                 key={`${selectedPartition}:${selectedPosition}:${selectedOffset ?? "none"}:${selectedTimestamp ?? "none"}:${selectedLimit}`}
@@ -178,7 +213,10 @@ export default async function TopicDetailPage({
 
             {browseResult.error ? (
               <div className="mt-5">
-                <ErrorState title="Failed to load topic messages" copy={browseResult.error} />
+                <ErrorState
+                  title="Failed to load topic messages"
+                  copy={browseResult.error}
+                />
               </div>
             ) : browseResult.messages ? (
               <div className="mt-5 space-y-4">
@@ -210,26 +248,46 @@ export default async function TopicDetailPage({
                   style={{
                     borderColor: "var(--surface-border)",
                     background: "var(--surface-2)",
-                    color: "var(--text-secondary)"
+                    color: "var(--text-secondary)",
                   }}
                 >
-                  <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                  <span
+                    className="font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     Browse Mode:
                   </span>{" "}
-                  <span className="capitalize">{browseResult.messages.request.mode}</span>
+                  <span className="capitalize">
+                    {browseResult.messages.request.mode}
+                  </span>
                   {typeof browseResult.messages.request.offset === "number" ? (
-                    <span className="ml-4" style={{ color: "var(--text-muted)" }}>
+                    <span
+                      className="ml-4"
+                      style={{ color: "var(--text-muted)" }}
+                    >
                       Requested offset{" "}
-                      <span className="font-mono" style={{ color: "var(--text-secondary)" }}>
+                      <span
+                        className="font-mono"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         {browseResult.messages.request.offset}
                       </span>
                     </span>
                   ) : null}
-                  {typeof browseResult.messages.request.timestamp === "number" ? (
-                    <span className="ml-4" style={{ color: "var(--text-muted)" }}>
+                  {typeof browseResult.messages.request.timestamp ===
+                  "number" ? (
+                    <span
+                      className="ml-4"
+                      style={{ color: "var(--text-muted)" }}
+                    >
                       Requested time{" "}
-                      <span className="font-mono" style={{ color: "var(--text-secondary)" }}>
-                        <LocalDateTime value={browseResult.messages.request.timestamp} />
+                      <span
+                        className="font-mono"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        <LocalDateTime
+                          value={browseResult.messages.request.timestamp}
+                        />
                       </span>
                     </span>
                   ) : null}
@@ -240,13 +298,13 @@ export default async function TopicDetailPage({
                     href={buildBrowseHref(baseTopicPath, {
                       partition: browseResult.messages.partition,
                       position: "earliest",
-                      limit: browseResult.messages.request.limit
+                      limit: browseResult.messages.request.limit,
                     })}
                     className="rounded-2xl border px-4 py-2 text-sm font-semibold transition"
                     style={{
                       borderColor: "var(--surface-border)",
                       background: "var(--surface-2)",
-                      color: "var(--text-primary)"
+                      color: "var(--text-primary)",
                     }}
                   >
                     Restart From Earliest
@@ -255,19 +313,23 @@ export default async function TopicDetailPage({
                     href={buildBrowseHref(baseTopicPath, {
                       partition: browseResult.messages.partition,
                       offset: browseResult.messages.nextOffset,
-                      limit: browseResult.messages.request.limit
+                      limit: browseResult.messages.request.limit,
                     })}
                     className="rounded-2xl border px-4 py-2 text-sm font-semibold transition"
                     style={{
                       borderColor: "var(--accent-border)",
                       background: "var(--accent-soft)",
-                      color: "var(--accent-contrast)"
+                      color: "var(--accent-contrast)",
                     }}
                   >
                     Load Next {browseResult.messages.request.limit}
                   </Link>
-                  <p className="text-xs uppercase tracking-[0.18em]" style={{ color: "var(--text-muted)" }}>
-                    Next page starts at offset {browseResult.messages.nextOffset}
+                  <p
+                    className="text-xs uppercase tracking-[0.18em]"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Next page starts at offset{" "}
+                    {browseResult.messages.nextOffset}
                   </p>
                 </div>
 
@@ -321,7 +383,6 @@ function parsePosition(value: string | undefined): "earliest" | "latest" {
   return value === "earliest" ? "earliest" : "latest";
 }
 
-
 function buildBrowseHref(
   basePath: string,
   query: {
@@ -329,11 +390,11 @@ function buildBrowseHref(
     position?: "earliest" | "latest";
     offset?: number;
     limit: number;
-  }
+  },
 ) {
   const searchParams = new URLSearchParams({
     partition: String(query.partition),
-    limit: String(query.limit)
+    limit: String(query.limit),
   });
 
   if (typeof query.offset === "number") {

@@ -7,7 +7,7 @@ import type { Topic } from "@/lib/types";
 import { EmptyState } from "@/components/page-frame";
 
 type TopicsTableProps = {
-  topics: Topic[];
+  readonly topics: Topic[] | null;
 };
 
 export function TopicsTable({ topics }: TopicsTableProps) {
@@ -16,15 +16,26 @@ export function TopicsTable({ topics }: TopicsTableProps) {
   const normalizedQuery = deferredQuery.trim().toLowerCase();
 
   const filteredTopics = normalizedQuery
-    ? topics.filter((topic) => topic.name.toLowerCase().includes(normalizedQuery))
+    ? topics?.filter((topic) =>
+        topic.name.toLowerCase().includes(normalizedQuery),
+      )
     : topics;
 
   return (
     <div className="space-y-4">
-      <div className="rounded-[24px] border p-4" style={{ borderColor: "var(--surface-border)", background: "var(--surface-1)" }}>
+      <div
+        className="rounded-3xl border p-4"
+        style={{
+          borderColor: "var(--surface-border)",
+          background: "var(--surface-1)",
+        }}
+      >
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <label className="block w-full md:max-w-md">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: "var(--text-muted)" }}>
+            <span
+              className="text-[11px] font-semibold uppercase tracking-[0.24em]"
+              style={{ color: "var(--text-muted)" }}
+            >
               Search Topics
             </span>
             <input
@@ -38,27 +49,42 @@ export function TopicsTable({ topics }: TopicsTableProps) {
                 background: "var(--surface-2)",
                 color: "var(--text-primary)",
                 caretColor: "var(--accent)",
-                boxShadow: "none"
+                boxShadow: "none",
               }}
             />
           </label>
-          <p className="text-xs uppercase tracking-[0.18em]" style={{ color: "var(--text-muted)" }}>
-            Showing {filteredTopics.length} of {topics.length}
+          <p
+            className="text-xs uppercase tracking-[0.18em]"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Showing {filteredTopics?.length} of {topics?.length}
           </p>
         </div>
       </div>
 
-      {filteredTopics.length === 0 ? (
+      {filteredTopics?.length === 0 ? (
         <EmptyState
           title="No topics match this search"
           copy="Try a different topic name or clear the current filter."
         />
       ) : (
-        <div className="overflow-hidden rounded-[28px] border" style={{ borderColor: "var(--surface-border)", background: "var(--surface-1)" }}>
+        <div
+          className="overflow-hidden rounded-[28px] border"
+          style={{
+            borderColor: "var(--surface-border)",
+            background: "var(--surface-1)",
+          }}
+        >
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
               <thead>
-                <tr className="border-b text-left text-[11px] uppercase tracking-[0.24em]" style={{ borderColor: "var(--surface-border)", color: "var(--text-muted)" }}>
+                <tr
+                  className="border-b text-left text-[11px] uppercase tracking-[0.24em]"
+                  style={{
+                    borderColor: "var(--surface-border)",
+                    color: "var(--text-muted)",
+                  }}
+                >
                   <th className="px-5 py-4 font-semibold">Topic</th>
                   <th className="px-5 py-4 font-semibold">Partitions</th>
                   <th className="px-5 py-4 font-semibold">Leaders</th>
@@ -66,8 +92,16 @@ export function TopicsTable({ topics }: TopicsTableProps) {
                 </tr>
               </thead>
               <tbody>
-                {filteredTopics.map((topic) => (
-                  <tr key={topic.name} className="border-t text-sm" style={{ borderColor: "color-mix(in srgb, var(--surface-border) 50%, transparent)", color: "var(--text-secondary)" }}>
+                {filteredTopics?.map((topic) => (
+                  <tr
+                    key={topic.name}
+                    className="border-t text-sm"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--surface-border) 50%, transparent)",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
                     <td className="px-5 py-4">
                       <Link
                         href={`/topics/${encodeURIComponent(topic.name)}`}
@@ -77,14 +111,21 @@ export function TopicsTable({ topics }: TopicsTableProps) {
                         {topic.name}
                       </Link>
                     </td>
-                    <td className="px-5 py-4 font-mono">{topic.partitions.length}</td>
+                    <td className="px-5 py-4 font-mono">
+                      {topic.partitions.length}
+                    </td>
                     <td className="px-5 py-4 font-mono">
                       {Array.from(
-                        new Set(topic.partitions.map((partition) => partition.leader))
+                        new Set(
+                          topic.partitions.map((partition) => partition.leader),
+                        ),
                       ).join(", ")}
                     </td>
                     <td className="px-5 py-4 font-mono">
-                      {topic.partitions.reduce((sum, partition) => sum + partition.isr.length, 0)}
+                      {topic.partitions.reduce(
+                        (sum, partition) => sum + partition.isr.length,
+                        0,
+                      )}
                     </td>
                   </tr>
                 ))}
