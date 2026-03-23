@@ -3,7 +3,7 @@ import {
   ErrorStateProps,
   PageFrameProps,
   StatCardProps,
-} from "@/interfaces/timeFrame.interface";
+} from "@/interfaces/topic.interface";
 
 export function StatCard({ label, value, hint }: StatCardProps) {
   return (
