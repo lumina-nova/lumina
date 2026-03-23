@@ -9,22 +9,15 @@ import {
 } from "@/components/page-frame";
 import { TopicBrowseForm } from "@/components/topic-browse-form";
 import { TopicMessagesTable } from "@/components/topic-messages-table";
-import { getTopic, getTopicMessages } from "@/lib/api";
+import { getTopic } from "@/lib/api";
+import { TopicDetailPageProps } from "@/interfaces/topic.interface";
+import {
+  browseTopicMessages,
+  buildBrowseHref,
+  parseTopicQuery,
+} from "@/utils/topicsUtils";
 
 export const dynamic = "force-dynamic";
-
-type TopicDetailPageProps = {
-  readonly params: Promise<{
-    name: string;
-  }>;
-  readonly searchParams?: Promise<{
-    partition?: string;
-    position?: string;
-    offset?: string;
-    timestamp?: string;
-    limit?: string;
-  }>;
-};
 
 export default async function TopicDetailPage({
   params,
@@ -58,32 +51,24 @@ export default async function TopicDetailPage({
   const topic = result.topic;
   const replicationFactor = topic.partitions[0]?.replicas.length ?? 0;
   const defaultPartition = topic.partitions[0]?.id ?? 0;
-  const selectedPartition = parsePartition(query.partition, defaultPartition);
-  const selectedPosition = parsePosition(query.position);
-  const selectedLimit = parseLimit(query.limit);
-  const selectedOffset = parseOffset(query.offset);
-  const selectedTimestamp = parseTimestamp(query.timestamp);
+
+  const {
+    selectedPartition,
+    selectedPosition,
+    selectedLimit,
+    selectedOffset,
+    selectedTimestamp,
+  } = parseTopicQuery(query, defaultPartition);
+
   const baseTopicPath = `/topics/${encodeURIComponent(topic.name)}`;
 
-  const browseResult =
-    topic.partitions.length === 0
-      ? { messages: null, error: null as string | null }
-      : await getTopicMessages(topic.name, {
-          partition: selectedPartition,
-          position:
-            selectedOffset === null && selectedTimestamp === null
-              ? selectedPosition
-              : undefined,
-          offset: selectedOffset ?? undefined,
-          timestamp: selectedTimestamp ?? undefined,
-          limit: selectedLimit,
-        })
-          .then((messages) => ({ messages, error: null as string | null }))
-          .catch((error: unknown) => ({
-            messages: null,
-            error: error instanceof Error ? error.message : "Unknown error",
-          }));
-
+  const browseResult = await browseTopicMessages(topic, {
+    selectedPartition,
+    selectedPosition,
+    selectedOffset,
+    selectedTimestamp,
+    selectedLimit,
+  });
   return (
     <PageFrame
       eyebrow="Topic Detail"
@@ -193,7 +178,7 @@ export default async function TopicDetailPage({
               </p>
             </div>
             <div
-              className="mt-5 rounded-[24px] border p-4"
+              className="mt-5 rounded-3xl border p-4"
               style={{
                 borderColor: "var(--surface-border)",
                 background: "var(--surface-2)",
@@ -348,60 +333,4 @@ export default async function TopicDetailPage({
       )}
     </PageFrame>
   );
-}
-
-function parsePartition(value: string | undefined, fallback: number) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
-}
-
-function parseLimit(value: string | undefined) {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return 50;
-  }
-  return Math.min(parsed, 100);
-}
-
-function parseOffset(value: string | undefined) {
-  if (!value) {
-    return null;
-  }
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
-}
-
-function parseTimestamp(value: string | undefined) {
-  if (!value) {
-    return null;
-  }
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
-}
-
-function parsePosition(value: string | undefined): "earliest" | "latest" {
-  return value === "earliest" ? "earliest" : "latest";
-}
-
-function buildBrowseHref(
-  basePath: string,
-  query: {
-    partition: number;
-    position?: "earliest" | "latest";
-    offset?: number;
-    limit: number;
-  },
-) {
-  const searchParams = new URLSearchParams({
-    partition: String(query.partition),
-    limit: String(query.limit),
-  });
-
-  if (typeof query.offset === "number") {
-    searchParams.set("offset", String(query.offset));
-  } else if (query.position) {
-    searchParams.set("position", query.position);
-  }
-
-  return `${basePath}?${searchParams.toString()}`;
 }

@@ -20,3 +20,18 @@ export interface StatCardProps {
   readonly value: string;
   readonly hint: string;
 }
+
+export interface TopicDetailPageProps {
+  readonly params: Promise<{
+    name: string;
+  }>;
+  readonly searchParams?: Promise<{
+    partition?: string;
+    position?: string;
+    offset?: string;
+    timestamp?: string;
+    limit?: string;
+  }>;
+}
+
+export type BrowsePosition = "earliest" | "latest";
