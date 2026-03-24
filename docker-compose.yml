@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   kafka:
     image: apache/kafka:latest
@@ -19,12 +21,11 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
 
   lumina:
-    build:
-      context: .
+    image: luminanova/lumina:latest   # 👈 use your Docker Hub image
     container_name: lumina-app
     depends_on:
       - kafka
-    environment:
-      KAFKA_BROKERS: "kafka:19092"
     ports:
       - "3000:3000"
+    environment:
+      KAFKA_BROKERS: "kafka:19092"   # 👈 MOST IMPORTANT LINE

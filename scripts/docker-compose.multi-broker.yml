@@ -60,8 +60,7 @@ services:
       KAFKA_MIN_INSYNC_REPLICAS: "2"
 
   lumina:
-    build:
-      context: ..
+    image: luminanova/lumina:latest
     container_name: lumina-multi-app
     depends_on:
       - kafka-1

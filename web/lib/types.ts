@@ -63,6 +63,12 @@ export type TopicMessagesResponse = {
   records: TopicMessageRecord[];
 };
 
+export type TailEvent = {
+  type: "record" | "error";
+  record?: TopicMessageRecord;
+  message?: string;
+};
+
 export type ConsumerGroup = {
   groupId: string;
   state: string;

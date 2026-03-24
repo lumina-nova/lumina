@@ -1,8 +1,12 @@
-package http
+package router
 
-import nethttp "net/http"
+import (
+	nethttp "net/http"
 
-func NewRouter(handler *Handler) nethttp.Handler {
+	"github.com/luminakafka/lumina/internal/api/http/handlers"
+)
+
+func NewRouter(handler *handlers.Handler) nethttp.Handler {
 	mux := nethttp.NewServeMux()
 	mux.HandleFunc("/health", handler.Health)
 	mux.HandleFunc("/api/brokers", handler.GetBrokers)
@@ -13,5 +17,6 @@ func NewRouter(handler *Handler) nethttp.Handler {
 	mux.HandleFunc("/api/consumer-groups", handler.GetConsumerGroups)
 	mux.HandleFunc("/api/consumer-groups/{name}", handler.GetConsumerGroup)
 
+	mux.HandleFunc("/api/topics/{name}/tail", handler.TailTopicMessages)
 	return mux
 }

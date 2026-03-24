@@ -121,3 +121,14 @@ type BrowseMessagesResponse struct {
 	HighWatermark       int64                        `json:"highWatermark"`
 	Records             []MessageRecord              `json:"records"`
 }
+
+type TailMessagesRequest struct {
+	Topic     string
+	Partition int32
+}
+
+type TailEvent struct {
+	Type    string         `json:"type"`
+	Record  *MessageRecord `json:"record,omitempty"`
+	Message string         `json:"message,omitempty"`
+}
