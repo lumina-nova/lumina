@@ -1,0 +1,10 @@
+.DS_Store
+.git
+.gocache
+.idea
+.pnpm-store
+node_modules
+web/node_modules
+web/.next
+__pycache__
+*.pyc
