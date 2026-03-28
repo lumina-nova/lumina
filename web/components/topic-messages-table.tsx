@@ -10,6 +10,8 @@ type TopicMessagesTableProps = {
   records: TopicMessageRecord[];
 };
 
+const inlinePayloadPreviewLength = 280;
+
 export function TopicMessagesTable({ records }: TopicMessagesTableProps) {
   const [activeHeaderRecordId, setActiveHeaderRecordId] = useState<string | null>(null);
 
@@ -84,9 +86,13 @@ export function TopicMessagesTable({ records }: TopicMessagesTableProps) {
 }
 
 function renderPayload(payload: MessagePayload) {
-  const preview = payloadPreview(payload);
+  const fullPreview = payloadPreview(payload);
   const isBinary = payload.encoding === "base64";
   const isEmpty = payload.size === 0;
+  const shouldCollapse = fullPreview.length > inlinePayloadPreviewLength;
+  const inlinePreview = shouldCollapse
+    ? `${fullPreview.slice(0, inlinePayloadPreviewLength)}…`
+    : fullPreview;
 
   return (
     <div className="max-w-[32rem] space-y-2">
@@ -109,20 +115,39 @@ function renderPayload(payload: MessagePayload) {
           </span>
         ) : null}
       </div>
-      <details
-        className="group rounded-2xl border"
-        style={{ borderColor: "var(--surface-border)", background: "var(--surface-2)" }}
-      >
-        <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] marker:content-none" style={{ color: "var(--text-muted)" }}>
-          <span className="group-open:hidden">Show Payload</span>
-          <span className="hidden group-open:inline">Hide Payload</span>
-        </summary>
-        <div className="border-t px-3 py-3" style={{ borderColor: "var(--surface-border)" }}>
+      {shouldCollapse ? (
+        <details
+          className="group rounded-2xl border"
+          style={{ borderColor: "var(--surface-border)", background: "var(--surface-2)" }}
+        >
+          <summary className="cursor-pointer list-none px-3 py-2 marker:content-none">
+            <p className="whitespace-pre-wrap break-all font-mono text-xs leading-6" style={{ color: "var(--text-primary)" }}>
+              {inlinePreview}
+            </p>
+            <span
+              className="mt-2 inline-block text-[11px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <span className="group-open:hidden">Show More</span>
+              <span className="hidden group-open:inline">Show Less</span>
+            </span>
+          </summary>
+          <div className="border-t px-3 py-3" style={{ borderColor: "var(--surface-border)" }}>
+            <p className="whitespace-pre-wrap break-all font-mono text-xs leading-6" style={{ color: "var(--text-primary)" }}>
+              {fullPreview}
+            </p>
+          </div>
+        </details>
+      ) : (
+        <div
+          className="rounded-2xl border px-3 py-3"
+          style={{ borderColor: "var(--surface-border)", background: "var(--surface-2)" }}
+        >
           <p className="whitespace-pre-wrap break-all font-mono text-xs leading-6" style={{ color: "var(--text-primary)" }}>
-            {preview}
+            {fullPreview}
           </p>
         </div>
-      </details>
+      )}
     </div>
   );
 }

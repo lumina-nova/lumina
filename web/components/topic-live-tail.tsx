@@ -46,8 +46,9 @@ export function TopicLiveTail({
       try {
         const payload = JSON.parse(event.data) as TailEvent;
         if (payload.type === "record" && payload.record) {
+          const record = payload.record;
           setRecords((current) => {
-            const next = [...current, payload.record];
+            const next = [...current, record];
             if (next.length <= maxLiveRecords) {
               return next;
             }
