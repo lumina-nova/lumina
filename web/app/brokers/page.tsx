@@ -1,4 +1,4 @@
-import { EmptyState, ErrorState, PageFrame, StatCard } from "@/components/page-frame";
+import { EmptyState, ErrorState, PageFrame, StatCard } from "@/components/layout/page-frame";
 import { getBrokers } from "@/lib/api";
 
 export const dynamic = "force-dynamic";

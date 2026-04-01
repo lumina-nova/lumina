@@ -1,5 +1,5 @@
-import { EmptyState, ErrorState, PageFrame, StatCard } from "@/components/page-frame";
-import { ConsumerGroupsTable } from "@/components/consumer-groups-table";
+import { EmptyState, ErrorState, PageFrame, StatCard } from "@/components/layout/page-frame";
+import { ConsumerGroupsTable } from "@/features/consumer-groups/components/consumer-groups-table";
 import { getConsumerGroups } from "@/lib/api";
 
 export const dynamic = "force-dynamic";

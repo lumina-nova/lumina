@@ -3,14 +3,14 @@ import {
   ErrorState,
   PageFrame,
   StatCard,
-} from "@/components/page-frame";
-import { TopicsTable } from "@/components/topics-table";
-import { getTopics } from "@/lib/api";
+} from "@/components/layout/page-frame";
+import { TopicsTable } from "@/features/topics/components/topics-table";
 import {
   PAGE_FRAME_PROPS_DATA,
   PAGE_FRAME_PROPS_FOR_ERROR_STATE,
-} from "../../constants/topic";
-import { getTopicStats } from "@/utils/topicsUtils";
+} from "@/features/topics/lib/topic-page.constants";
+import { getTopicStats } from "@/features/topics/lib/topic-utils";
+import { getTopics } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 

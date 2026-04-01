@@ -3,11 +3,14 @@ import {
   ErrorState,
   PageFrame,
   StatCard,
-} from "@/components/page-frame";
-import { TopicMessageModes } from "@/components/topic-message-modes";
+} from "@/components/layout/page-frame";
+import { TopicMessageModes } from "@/features/topics/components/topic-message-modes";
+import { TopicDetailPageProps } from "@/features/topics/lib/topic.types";
+import {
+  browseTopicMessages,
+  parseTopicQuery,
+} from "@/features/topics/lib/topic-utils";
 import { getTopic } from "@/lib/api";
-import { TopicDetailPageProps } from "@/interfaces/topic.interface";
-import { browseTopicMessages, parseTopicQuery } from "@/utils/topicsUtils";
 
 export const dynamic = "force-dynamic";
 
