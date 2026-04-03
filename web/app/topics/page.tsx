@@ -46,11 +46,18 @@ export default async function TopicsPage() {
     );
   }
 
-  const { totalTopics, totalPartitions, totalLeaders } = getTopicStats(topics);
+  const {
+    totalTopics,
+    totalPartitions,
+    totalLeaders,
+    unhealthyTopics,
+    underReplicatedPartitions,
+    offlinePartitions,
+  } = getTopicStats(topics);
 
   return (
     <PageFrame {...PAGE_FRAME_PROPS_DATA}>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
         <StatCard
           label="Topics"
           value={totalTopics}
@@ -65,6 +72,21 @@ export default async function TopicsPage() {
           label="Unique Leaders"
           value={totalLeaders}
           hint="Distinct broker leaders represented in topic metadata."
+        />
+        <StatCard
+          label="Unhealthy Topics"
+          value={unhealthyTopics}
+          hint="Topics with at least one offline or under-replicated partition."
+        />
+        <StatCard
+          label="Under-Replicated"
+          value={underReplicatedPartitions}
+          hint="Partitions where ISR is smaller than the replica set."
+        />
+        <StatCard
+          label="Offline"
+          value={offlinePartitions}
+          hint="Partitions with no active leader in the returned metadata."
         />
       </div>
       <TopicsTable topics={topics} />

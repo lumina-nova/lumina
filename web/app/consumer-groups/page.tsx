@@ -1,5 +1,6 @@
 import { EmptyState, ErrorState, PageFrame, StatCard } from "@/components/layout/page-frame";
 import { ConsumerGroupsTable } from "@/features/consumer-groups/components/consumer-groups-table";
+import { getConsumerGroupSummary } from "@/features/consumer-groups/lib/consumer-group-utils";
 import { getConsumerGroups } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -28,9 +29,7 @@ export default async function ConsumerGroupsPage() {
   }
 
   const groups = result.groups;
-  const stable = groups.filter((group) => group.state.toLowerCase() === "stable");
-  const totalLag = groups.reduce((sum, group) => sum + group.lag, 0);
-  const totalMembers = groups.reduce((sum, group) => sum + group.members, 0);
+  const summary = getConsumerGroupSummary(groups);
 
   return (
     <PageFrame
@@ -38,7 +37,7 @@ export default async function ConsumerGroupsPage() {
       title="Consumer Groups"
       description="Group-level state, membership, and aggregate lag from Kafka. Open a group to inspect coordinator, member assignments, and lag per partition."
     >
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
         <StatCard
           label="Groups"
           value={String(groups.length)}
@@ -46,18 +45,28 @@ export default async function ConsumerGroupsPage() {
         />
         <StatCard
           label="Stable"
-          value={String(stable.length)}
+          value={summary.stableGroups}
           hint="Groups currently reporting Stable state."
         />
         <StatCard
           label="Members"
-          value={String(totalMembers)}
+          value={summary.totalMembers}
           hint="Total active members across returned groups."
         />
         <StatCard
           label="Lag"
-          value={String(totalLag)}
+          value={summary.totalLag}
           hint="Aggregate lag across all returned groups."
+        />
+        <StatCard
+          label="Inactive"
+          value={summary.inactiveGroups}
+          hint="Groups with zero active members in the returned snapshot."
+        />
+        <StatCard
+          label="Lag Watch"
+          value={summary.highLagGroups}
+          hint="Groups crossing warning or critical lag thresholds."
         />
       </div>
 

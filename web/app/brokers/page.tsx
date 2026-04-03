@@ -1,4 +1,6 @@
 import { EmptyState, ErrorState, PageFrame, StatCard } from "@/components/layout/page-frame";
+import { BrokersTable } from "@/features/brokers/components/brokers-table";
+import { getBrokerSummary } from "@/features/brokers/lib/broker-utils";
 import { getBrokers } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -27,9 +29,7 @@ export default async function BrokersPage() {
   }
 
   const brokers = result.brokers;
-  const racks = new Set(
-    brokers.map((broker) => broker.rack).filter((rack) => rack !== "")
-  ).size;
+  const summary = getBrokerSummary(brokers);
 
   return (
     <PageFrame
@@ -37,23 +37,77 @@ export default async function BrokersPage() {
       title="Brokers"
       description="Live broker inventory from the connected cluster. Use this view to confirm node IDs, host mappings, and rack metadata."
     >
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
         <StatCard
           label="Broker Count"
-          value={String(brokers.length)}
+          value={summary.brokerCount}
           hint="Backed by GET /api/brokers."
         />
         <StatCard
           label="Rack Count"
-          value={String(racks)}
+          value={summary.rackCount}
           hint="Unique rack values present in broker metadata."
         />
         <StatCard
           label="Unracked"
-          value={String(brokers.filter((broker) => broker.rack === "").length)}
+          value={summary.unrackedBrokers}
           hint="Brokers without rack annotations."
         />
+        <StatCard
+          label="Metadata Warnings"
+          value={summary.metadataWarnings}
+          hint="Brokers with missing rack data or endpoint consistency issues."
+        />
+        <StatCard
+          label="Duplicate Endpoints"
+          value={summary.duplicateEndpoints}
+          hint="Host:port entries reused by more than one broker in metadata."
+        />
+        <StatCard
+          label="Invalid Endpoints"
+          value={summary.invalidEndpoints}
+          hint="Broker rows with missing host values or non-positive ports."
+        />
       </div>
+
+      {(Number(summary.unrackedBrokers) > 0 ||
+        Number(summary.duplicateEndpoints) > 0 ||
+        Number(summary.invalidEndpoints) > 0) ? (
+        <div
+          className="rounded-[24px] border px-5 py-4"
+          style={{
+            borderColor: "rgba(245, 158, 11, 0.26)",
+            background: "rgba(245, 158, 11, 0.08)",
+          }}
+        >
+          <h3
+            className="text-sm font-semibold uppercase tracking-[0.18em]"
+            style={{ color: "#fcd34d" }}
+          >
+            Metadata Hints
+          </h3>
+          <div className="mt-3 space-y-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+            {Number(summary.unrackedBrokers) > 0 ? (
+              <p>
+                {summary.unrackedBrokers} broker
+                {summary.unrackedBrokers === "1" ? "" : "s"} missing rack metadata.
+              </p>
+            ) : null}
+            {Number(summary.duplicateEndpoints) > 0 ? (
+              <p>
+                {summary.duplicateEndpoints} duplicate host:port endpoint group
+                {summary.duplicateEndpoints === "1" ? "" : "s"} found in broker metadata.
+              </p>
+            ) : null}
+            {Number(summary.invalidEndpoints) > 0 ? (
+              <p>
+                {summary.invalidEndpoints} broker endpoint
+                {summary.invalidEndpoints === "1" ? "" : "s"} look invalid and should be checked.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       {brokers.length === 0 ? (
         <EmptyState
@@ -61,43 +115,7 @@ export default async function BrokersPage() {
           copy="Kafka responded but did not return any broker metadata."
         />
       ) : (
-        <div
-          className="overflow-hidden rounded-[28px] border"
-          style={{ borderColor: "var(--surface-border)", background: "var(--surface-1)" }}
-        >
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse">
-              <thead>
-                <tr
-                  className="border-b text-left text-[11px] uppercase tracking-[0.24em]"
-                  style={{ borderColor: "var(--surface-border)", color: "var(--text-muted)" }}
-                >
-                  <th className="px-5 py-4 font-semibold">ID</th>
-                  <th className="px-5 py-4 font-semibold">Host</th>
-                  <th className="px-5 py-4 font-semibold">Port</th>
-                  <th className="px-5 py-4 font-semibold">Rack</th>
-                </tr>
-              </thead>
-              <tbody>
-                {brokers.map((broker) => (
-                  <tr
-                    key={broker.id}
-                    className="border-t text-sm"
-                    style={{
-                      borderColor: "color-mix(in srgb, var(--surface-border) 50%, transparent)",
-                      color: "var(--text-secondary)"
-                    }}
-                  >
-                    <td className="px-5 py-4 font-mono">{broker.id}</td>
-                    <td className="px-5 py-4 font-mono">{broker.host}</td>
-                    <td className="px-5 py-4 font-mono">{broker.port}</td>
-                    <td className="px-5 py-4">{broker.rack || "Unavailable"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <BrokersTable brokers={brokers} />
       )}
     </PageFrame>
   );
